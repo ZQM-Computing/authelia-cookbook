@@ -27,16 +27,18 @@ def request(host: str, headers: dict[str, str] | None = None):
 class ProxyIntegrationSmokeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        for attempt in range(30):
+        last_result = "no HTTP response"
+        for attempt in range(15):
             try:
                 status, body = request("public.example.test")
+                last_result = f"HTTP {status}: {body[:300]!r}"
                 if status == 200 and "PUBLIC_UPSTREAM_MARKER" in body:
                     return
-            except OSError:
-                pass
+            except OSError as exc:
+                last_result = repr(exc)
             import time
-            time.sleep(2)
-        raise RuntimeError("Caddy fixture did not become ready; inspect Compose logs.")
+            time.sleep(1)
+        raise RuntimeError(f"Caddy fixture did not return the public marker; last result: {last_result}")
 
     def test_public_host_reaches_only_public_marker(self):
         status, body = request("public.example.test")
