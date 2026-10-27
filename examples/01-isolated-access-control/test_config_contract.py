@@ -114,9 +114,10 @@ class AccessControlContractTests(unittest.TestCase):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, PROXY_PLAN)
 
-    def test_proxy_plan_does_not_claim_fixture_is_implemented(self):
-        self.assertIn("planned; not implemented or runtime-verified", PROXY_PLAN)
-        self.assertIn("not implemented", PROXY_PLAN.lower())
+    def test_proxy_plan_distinguishes_smoke_fixture_from_full_coverage(self):
+        self.assertIn("partial smoke fixture added", PROXY_PLAN.lower())
+        self.assertIn("full authorization coverage is not implemented or runtime-verified", PROXY_PLAN.lower())
+        self.assertIn("do not describe this as complete end-to-end authorization coverage", PROXY_PLAN.lower())
 
 
 if __name__ == "__main__":
