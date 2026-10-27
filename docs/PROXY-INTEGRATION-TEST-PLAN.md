@@ -2,7 +2,7 @@
 
 ## Status and scope
 
-**Status: partial smoke fixture added; full authorization coverage is not implemented or runtime-verified.** The disposable fixture in [examples/02-proxy-integration](../examples/02-proxy-integration/) now defines Caddy, Authelia, and two synthetic upstreams. Its intended smoke checks cover public routing, denial without a session, unauthenticated identity-header spoofing, deterministic unknown-host handling, and loopback-only port publication. CI evidence for this fixture is still pending.
+**Status: partial smoke fixture added; full authorization coverage is not implemented or runtime-verified.** The disposable fixture in [examples/02-proxy-integration](../examples/02-proxy-integration/) now defines Caddy, Authelia, and two synthetic upstreams. Its intended smoke checks cover public routing, denial without a session, unauthenticated identity-header spoofing, deterministic unknown-host handling, and loopback-only port publication. CI smoke evidence: [workflow run 40443070947](https://github.com/ZQM-Computing/authelia-cookbook/actions/runs/40443070947) passed on commit `37a273bb36c419c739032037f5e413639f6c8c7e`. This validates only the smoke assertions listed below; it does not close the positive-session or deliberate-regression gaps.
 
 The current smoke tests do **not** establish a valid authenticated session or verify identity headers after successful authentication. Do not describe this as complete end-to-end authorization coverage until those positive-path tests are implemented and pass.
 
