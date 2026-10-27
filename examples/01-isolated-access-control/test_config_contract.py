@@ -27,6 +27,14 @@ class AccessControlContractTests(unittest.TestCase):
     def test_port_is_loopback_only(self):
         self.assertIn('"127.0.0.1:9091:9091"', COMPOSE)
 
+    def test_external_cookie_urls_use_https(self):
+        self.assertIn('authelia_url: "https://auth.example.test"', CONFIG)
+        self.assertIn('default_redirection_url: "https://protected.example.test"', CONFIG)
+
+    def test_required_demo_secrets_are_explicit_placeholders(self):
+        self.assertIn("jwt_secret: \"synthetic-demo-", CONFIG)
+        self.assertIn("encryption_key: \"synthetic-demo-", CONFIG)
+
     def test_credentials_are_obviously_synthetic_and_incomplete(self):
         self.assertIn("REPLACE_WITH_A_REAL_AUTHELIA_GENERATED_HASH", USERS)
         self.assertIn("example.test", USERS)
