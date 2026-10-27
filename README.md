@@ -46,9 +46,9 @@ Run the example instructions from [its README](examples/01-isolated-access-contr
 
 ## Roadmap
 
-1. Validate the current example against the pinned image with Docker Compose config and Authelia's own configuration validation.
-2. Add an isolated reverse-proxy integration test with explicit allow/deny cases.
-3. Add MFA/recovery guidance and versioned test evidence only after those paths are exercised.
+1. Add an isolated reverse-proxy integration test with explicit allow/deny cases and test both protected and bypass routes.
+2. Generate a throwaway local password hash in the test harness so authentication can be exercised without committing credentials.
+3. Add MFA/recovery guidance and versioned evidence only after those paths are exercised.
 
 ## Contributing
 
