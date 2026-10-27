@@ -11,31 +11,31 @@
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-An **Authelia cookbook** for single sign-on and two-factor authentication patterns in front of self-hosted services. This repository now contains an initial isolated access-control exercise; it is not a fleet-verified or production-certified deployment. Validate examples against the exact versions and environment you intend to use.
+An **Authelia cookbook** for single sign-on and two-factor authentication patterns in front of self-hosted services. It currently contains one isolated access-control exercise. It is not a fleet-verified or production-certified deployment. Validate examples against the exact versions and environment you intend to use.
 
 ## Repository role and status
 
-**Status:** Active, public — initial example under review in [PR #2](https://github.com/ZQM-Computing/authelia-cookbook/pull/2).
+**Status:** Active, public — one isolated access-control example with CI configuration and runtime smoke tests.
 
 **Audience:** Engineers exploring identity-aware access controls for self-hosted services.
 
 **Portfolio:** Part of the ZQM Computing cookbook collection, indexed by [geospatial-cookbooks](https://github.com/ZQM-Computing/geospatial-cookbooks).
 
-**Evidence boundary:** The included Python tests assert selected configuration text. CI invokes Authelia's own configuration validator and starts the isolated service to probe its health endpoint. These checks do not validate a live authentication flow, reverse-proxy integration, forwarded-header trust, or production readiness. See the example README for the remaining runtime checks.
+**Evidence boundary:** CI runs standard-library configuration contract tests, validates Compose syntax, validates the configuration with the pinned Authelia image, generates a throwaway Argon2 password hash in the ephemeral CI workspace, starts the service, and probes its health endpoint. This proves the sample configuration can start in that CI environment. It does not validate a browser login, reverse-proxy integration, forwarded-header trust, MFA, recovery, direct-origin bypass, or production readiness.
 
 ## Prerequisites
 
 - Docker Engine and Docker Compose plugin
 - Local-only test environment
-- Optional local reverse proxy/hosts entries to exercise browser redirects
+- Optional local reverse proxy and hosts-file entries for manual browser testing
 
 ## Example
 
 | Path | Purpose | Evidence level |
 |---|---|---|
-| [01-isolated-access-control](examples/01-isolated-access-control/) | Loopback-bound Compose service; deny-by-default policy with explicit demo rules; synthetic identity placeholder | Configuration contract tests included; runtime validation still required |
+| [01-isolated-access-control](examples/01-isolated-access-control/) | Loopback-bound Compose service; deny-by-default policy with explicit demo rules and a synthetic identity placeholder | Contract tests, pinned-image config validation, service startup, and HTTP health probe in CI; no proxy/authentication integration test yet |
 
-Run the example instructions from [its README](examples/01-isolated-access-control/README.md). The user password hash is deliberately invalid until replaced locally with a throwaway generated hash; never commit credentials.
+Run the example instructions from [its README](examples/01-isolated-access-control/README.md). The committed password hash is deliberately invalid. CI substitutes a newly generated throwaway hash only in its disposable workspace; it does not change the tracked file. For local authentication testing, generate and insert a local throwaway hash using the matching Authelia CLI. Never commit credentials or real secrets.
 
 ## Safety and operational limits
 
@@ -46,9 +46,9 @@ Run the example instructions from [its README](examples/01-isolated-access-contr
 
 ## Roadmap
 
-1. Add an isolated reverse-proxy integration test with explicit allow/deny cases and test both protected and bypass routes.
-2. Generate a throwaway local password hash in the test harness so authentication can be exercised without committing credentials.
-3. Add MFA/recovery guidance and versioned evidence only after those paths are exercised.
+1. Add an isolated reverse-proxy integration test with explicit allow/deny cases, including the protected route, the intentionally bypassed demo route, and an unlisted host.
+2. Test proxy header handling and confirm direct access to the protected upstream cannot bypass the proxy's authorization decision.
+3. Add MFA and recovery guidance only after those flows have been exercised and the tested version/environment is recorded.
 
 ## Contributing
 
