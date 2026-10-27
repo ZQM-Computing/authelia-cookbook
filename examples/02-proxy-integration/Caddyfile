@@ -1,7 +1,3 @@
-{
-	auto_https off
-}
-
 http://public.example.test:8080 {
 	reverse_proxy public-app:80
 }
