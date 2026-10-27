@@ -4,14 +4,18 @@ on:
   pull_request:
     paths:
       - "examples/01-isolated-access-control/**"
+      - "examples/02-proxy-integration/**"
       - ".github/workflows/example-validation.yml"
       - "README.md"
+      - "docs/PROXY-INTEGRATION-TEST-PLAN.md"
   push:
     branches: [main]
     paths:
       - "examples/01-isolated-access-control/**"
+      - "examples/02-proxy-integration/**"
       - ".github/workflows/example-validation.yml"
       - "README.md"
+      - "docs/PROXY-INTEGRATION-TEST-PLAN.md"
   workflow_dispatch:
 
 permissions:
@@ -51,6 +55,10 @@ jobs:
         run: |
           set -euo pipefail
           demo_password="$(python -c 'import secrets; print(secrets.token_urlsafe(24))')"
+          password_file="$RUNNER_TEMP/authelia-demo-password"
+          printf '%s' "$demo_password" > "$password_file"
+          chmod 600 "$password_file"
+          echo "DEMO_PASSWORD_FILE=$password_file" >> "$GITHUB_ENV"
           hash_output="$(docker run --rm authelia/authelia:4.39.28 authelia crypto hash generate argon2 --password "$demo_password")"
           password_hash="$(printf '%s\n' "$hash_output" | sed -n 's/^Digest: //p' | head -n 1)"
           if [[ "$password_hash" != \$argon2* ]]; then
@@ -86,6 +94,42 @@ jobs:
           echo "Authelia did not become healthy within 60 seconds." >&2
           docker compose logs --no-color authelia
           exit 1
+      - name: Validate isolated Caddy proxy configuration
+        working-directory: examples/02-proxy-integration
+        run: >-
+          docker run --rm
+          --volume "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro"
+          caddy:2.10.2
+          caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+      - name: Validate fixture Authelia configuration
+        working-directory: examples/02-proxy-integration
+        run: >-
+          docker run --rm
+          --volume "$PWD/authelia-configuration.yml:/config/configuration.yml:ro"
+          --volume "$PWD/../01-isolated-access-control/users_database.yml:/config/users_database.yml:ro"
+          authelia/authelia:4.39.28
+          authelia config validate --config /config/configuration.yml
+      - name: Validate proxy fixture Compose topology
+        working-directory: examples/02-proxy-integration
+        run: docker compose config --quiet
+      - name: Start isolated proxy fixture
+        working-directory: examples/02-proxy-integration
+        run: docker compose up -d --no-build
+      - name: Test proxy routing and authorization boundary
+        working-directory: examples/02-proxy-integration
+        run: python -m unittest -v test_proxy_smoke.py
+      - name: Collect proxy fixture logs on failure
+        if: failure()
+        working-directory: examples/02-proxy-integration
+        run: docker compose logs --no-color
+      - name: Stop proxy fixture
+        if: always()
+        working-directory: examples/02-proxy-integration
+        run: docker compose down --volumes --remove-orphans
+      - name: Remove ephemeral demo credential file
+        if: always()
+        shell: bash
+        run: rm -f "${DEMO_PASSWORD_FILE:-}"
       - name: Stop isolated service
         if: always()
         working-directory: examples/01-isolated-access-control

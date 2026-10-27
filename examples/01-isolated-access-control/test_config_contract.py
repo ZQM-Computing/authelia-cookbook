@@ -1,4 +1,4 @@
-"""Small standard-library checks for the documented policy contract.
+"""Small standard-library checks for the documented policy and test-plan contract.
 
 These checks are deliberately not a YAML parser or an Authelia integration test.
 Run the actual image/config validation separately with Docker Compose.
@@ -8,9 +8,11 @@ import re
 import unittest
 
 ROOT = Path(__file__).parent
+REPO_ROOT = ROOT.parents[1]
 CONFIG = (ROOT / "configuration.yml").read_text(encoding="utf-8")
 USERS = (ROOT / "users_database.yml").read_text(encoding="utf-8")
 COMPOSE = (ROOT / "compose.yaml").read_text(encoding="utf-8")
+PROXY_PLAN = (REPO_ROOT / "docs" / "PROXY-INTEGRATION-TEST-PLAN.md").read_text(encoding="utf-8")
 
 
 class AccessControlContractTests(unittest.TestCase):
@@ -89,6 +91,34 @@ class AccessControlContractTests(unittest.TestCase):
         self.assertIn("example.test", USERS)
         self.assertIn('password: "$argon2id$REPLACE_WITH_A_REAL_AUTHELIA_GENERATED_HASH"', USERS)
         self.assertIn('email: "demo@example.test"', USERS)
+
+    def test_proxy_plan_requires_positive_authenticated_access(self):
+        self.assertIn("establish a valid session", PROXY_PLAN.lower())
+        self.assertIn("checks protected-upstream access", PROXY_PLAN.lower())
+        self.assertIn("positive assertion", PROXY_PLAN.lower())
+        self.assertIn("mandatory authorization work", PROXY_PLAN.lower())
+
+    def test_proxy_plan_makes_unknown_host_behavior_deterministic(self):
+        self.assertIn("deterministic", PROXY_PLAN.lower())
+        self.assertRegex(PROXY_PLAN, r"(?i)\b404\b")
+        self.assertIn("neither upstream marker appears", PROXY_PLAN)
+
+    def test_proxy_plan_covers_spoofing_exposure_and_regressions(self):
+        for phrase in (
+            "remote-user",
+            "remote-groups",
+            "published host ports",
+            "deliberate `forward_auth` removal",
+            "protected-upstream port publication",
+            "always tear down containers",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, PROXY_PLAN.lower())
+
+    def test_proxy_plan_distinguishes_smoke_fixture_from_full_coverage(self):
+        self.assertIn("positive-session test implemented", PROXY_PLAN.lower())
+        self.assertIn("not yet runtime-verified", PROXY_PLAN.lower())
+        self.assertIn("does not establish", PROXY_PLAN.lower())
 
 
 if __name__ == "__main__":

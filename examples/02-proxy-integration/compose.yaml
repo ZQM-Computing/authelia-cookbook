@@ -1,0 +1,48 @@
+services:
+  caddy:
+    image: caddy:2.10.2
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
+      - "127.0.0.1:18080:8080"
+      - "127.0.0.1:18443:8443"
+    depends_on:
+      - authelia
+      - public-app
+      - protected-app
+    networks:
+      - proxy-test
+      - edge
+    restart: "no"
+
+  authelia:
+    image: authelia/authelia:4.39.28
+    command: ["authelia", "--config", "/config/configuration.yml"]
+    volumes:
+      - ./authelia-configuration.yml:/config/configuration.yml:ro
+      - ../01-isolated-access-control/users_database.yml:/config/users_database.yml:ro
+    networks:
+      - proxy-test
+    restart: "no"
+
+  public-app:
+    image: nginx:1.29.3-alpine
+    volumes:
+      - ./public.html:/usr/share/nginx/html/index.html:ro
+    networks:
+      - proxy-test
+    restart: "no"
+
+  protected-app:
+    image: python:3.13.7-alpine3.22
+    command: ["python", "/app/server.py"]
+    volumes:
+      - ./protected_server.py:/app/server.py:ro
+    networks:
+      - proxy-test
+    restart: "no"
+
+networks:
+  proxy-test:
+    internal: true
+  edge:
