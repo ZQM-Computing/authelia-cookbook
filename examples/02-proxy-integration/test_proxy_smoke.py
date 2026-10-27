@@ -7,6 +7,7 @@ Authelia browser session, so it is not full authorization coverage.
 from http.client import HTTPConnection, HTTPSConnection
 import json
 from pathlib import Path
+import re
 import socket
 import ssl
 import subprocess
@@ -122,6 +123,48 @@ class ProxyIntegrationSmokeTests(unittest.TestCase):
                 ("caddy", "127.0.0.1", "18080", "8080"),
                 ("caddy", "127.0.0.1", "18443", "8443"),
             ],
+        )
+
+    def test_forward_auth_directive_is_required(self):
+        # Regression guard: removing forward_auth must fail CI even if a
+        # particular request happens to receive a denial for another reason.
+        caddyfile = (ROOT / "Caddyfile").read_text()
+        protected_site = re.search(
+            r"https://protected\\.example\\.test:8443\\s*\\{(.*?)\\n\\}",
+            caddyfile,
+            flags=re.DOTALL,
+        )
+        self.assertIsNotNone(protected_site, "Protected virtual host definition is missing")
+        self.assertRegex(
+            protected_site.group(1),
+            r"(?m)^\\s*forward_auth\\s+authelia:9091\\s*\\{",
+            "Protected route must enforce Authelia forward_auth",
+        )
+        self.assertRegex(
+            protected_site.group(1),
+            r"(?m)^\\s*uri\\s+/api/authz/forward-auth\\s*$",
+            "Protected route must use Authelia's forward-auth endpoint",
+        )
+
+    def test_protected_upstream_must_not_publish_host_ports(self):
+        # Regression guard: publishing protected-app directly would create an
+        # authorization bypass around Caddy and must fail CI.
+        rendered = subprocess.run(
+            ["docker", "compose", "-f", "compose.yaml", "config", "--format", "json"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        config = json.loads(rendered.stdout)
+        protected = config["services"]["protected-app"]
+        self.assertFalse(
+            protected.get("ports"),
+            "Protected upstream must not publish any host ports",
+        )
+        self.assertFalse(
+            config["services"]["authelia"].get("ports"),
+            "Authelia must not publish any host ports in this fixture",
         )
 
     def test_private_network_is_internal(self):
