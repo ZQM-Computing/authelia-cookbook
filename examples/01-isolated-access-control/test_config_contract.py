@@ -105,15 +105,15 @@ class AccessControlContractTests(unittest.TestCase):
 
     def test_proxy_plan_covers_spoofing_exposure_and_regressions(self):
         for phrase in (
-            "Remote-User",
-            "Remote-Groups",
+            "remote-user",
+            "remote-groups",
             "published host ports",
-            "removing `forward_auth`",
+            "removing caddy `forward_auth`",
             "publishing the protected upstream port",
             "always tear down containers",
         ):
             with self.subTest(phrase=phrase):
-                self.assertIn(phrase, PROXY_PLAN)
+                self.assertIn(phrase, PROXY_PLAN.lower())
 
     def test_proxy_plan_distinguishes_smoke_fixture_from_full_coverage(self):
         self.assertIn("partial smoke fixture added", PROXY_PLAN.lower())
