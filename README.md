@@ -11,11 +11,11 @@
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-A **Authelia cookbook** for single sign-on and two-factor authentication patterns in front of self-hosted services. This repository now contains an initial isolated access-control exercise; it is not a fleet-verified or production-certified deployment. Validate examples against the exact versions and environment you intend to use.
+An **Authelia cookbook** for single sign-on and two-factor authentication patterns in front of self-hosted services. This repository now contains an initial isolated access-control exercise; it is not a fleet-verified or production-certified deployment. Validate examples against the exact versions and environment you intend to use.
 
 ## Repository role and status
 
-**Status:** Active, public — initial example submitted for review in [PR #2](https://github.com/ZQM-Computing/authelia-cookbook/pull/2).
+**Status:** Active, public — initial example under review in [PR #2](https://github.com/ZQM-Computing/authelia-cookbook/pull/2).
 
 **Audience:** Engineers exploring identity-aware access controls for self-hosted services.
 
