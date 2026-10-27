@@ -1,9 +1,10 @@
-""""Small standard-library checks for the documented policy contract.
+"""Small standard-library checks for the documented policy contract.
 
 These checks are deliberately not a YAML parser or an Authelia integration test.
 Run the actual image/config validation separately with Docker Compose.
 """
 from pathlib import Path
+import re
 import unittest
 
 ROOT = Path(__file__).parent
@@ -16,11 +17,17 @@ class AccessControlContractTests(unittest.TestCase):
     def test_default_is_deny(self):
         self.assertIn("default_policy: deny", CONFIG)
 
-    def test_only_explicit_demo_domains_are_listed(self):
+    def test_policy_rules_are_limited_to_two_named_demo_hosts(self):
         self.assertIn('domain: "public.example.test"', CONFIG)
         self.assertIn('domain: "protected.example.test"', CONFIG)
         self.assertNotIn("domain: '*'", CONFIG)
         self.assertNotIn('domain: "*.example.test"', CONFIG)
+        domains = re.findall(r'^\s+- domain: (.+)$', CONFIG, flags=re.MULTILINE)
+        self.assertEqual(
+            domains,
+            ['"public.example.test"', '"protected.example.test"'],
+            "Unexpected additional or reordered domain rules; review policy explicitly.",
+        )
 
     def test_protected_domain_requires_authentication(self):
         self.assertIn('domain: "protected.example.test"\n      policy: one_factor', CONFIG)
@@ -28,6 +35,10 @@ class AccessControlContractTests(unittest.TestCase):
     def test_port_is_loopback_only(self):
         self.assertIn('"127.0.0.1:9091:9091"', COMPOSE)
         self.assertNotIn('"9091:9091"', COMPOSE)
+
+    def test_config_and_user_database_mount_read_only(self):
+        self.assertIn("./configuration.yml:/config/configuration.yml:ro", COMPOSE)
+        self.assertIn("./users_database.yml:/config/users_database.yml:ro", COMPOSE)
 
     def test_image_uses_an_explicit_version_not_latest(self):
         self.assertIn("image: authelia/authelia:4.39.28", COMPOSE)
