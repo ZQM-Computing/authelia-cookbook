@@ -34,9 +34,10 @@ services:
     restart: "no"
 
   protected-app:
-    image: nginx:1.29.3-alpine
+    image: python:3.13.7-alpine3.22
+    command: ["python", "/app/server.py"]
     volumes:
-      - ./protected.html:/usr/share/nginx/html/index.html:ro
+      - ./protected_server.py:/app/server.py:ro
     networks:
       - proxy-test
     restart: "no"
