@@ -11,57 +11,51 @@
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-A **Authelia cookbook** — single sign-on and two-factor authentication for proxied services. Queued in wave-11 (Node-3 hub set). Patterns are planned from the design, not yet from fleet runs. It is intended for Engineers who add SSO and 2FA in front of self-hosted services. Validate each pattern against your own data, software versions, and operating environment before adopting it.
+A **Authelia cookbook** for single sign-on and two-factor authentication patterns in front of self-hosted services. This repository now contains an initial isolated access-control exercise; it is not a fleet-verified or production-certified deployment. Validate examples against the exact versions and environment you intend to use.
 
 ## Repository role and status
 
-**Status:** Active, public — seeding. Pattern passes land in follow-up work from fleet-verified setups; the tables below list what is planned, not what is already written.
+**Status:** Active, public — initial example submitted for review in [PR #2](https://github.com/ZQM-Computing/authelia-cookbook/pull/2).
 
-**What this repository is:** Authelia patterns — see the table below.
+**Audience:** Engineers exploring identity-aware access controls for self-hosted services.
 
-**What it contributes:** Part of the ZQM Computing geospatial portfolio. The umbrella index for the series is [geospatial-cookbooks](https://github.com/ZQM-Computing/geospatial-cookbooks).
+**Portfolio:** Part of the ZQM Computing cookbook collection, indexed by [geospatial-cookbooks](https://github.com/ZQM-Computing/geospatial-cookbooks).
 
-**Standing:** This repository is maintained independently. Automated checks cover only the paths and environments configured in its workflows; they do not establish production readiness or operational certification.
-
-## Who this is for
-
-Engineers who add SSO and 2FA in front of self-hosted services.
+**Evidence boundary:** The included Python tests assert selected configuration text; they are not a YAML parser, Authelia integration test, reverse-proxy test, or proof of production readiness. See the example README for the required runtime validation.
 
 ## Prerequisites
 
-- Authelia via Docker
-- Caddy as a reverse proxy (see caddy-cookbook)
-- A user backend (file or LDAP)
+- Docker Engine and Docker Compose plugin
+- Local-only test environment
+- Optional local reverse proxy/hosts entries to exercise browser redirects
 
-## Patterns (planned)
+## Example
 
-| # | Example | What it will demonstrate |
-|---|---------|--------------------------|
-| 01 | `01-first-setup` | A first Authelia deployment with file users |
-| 02 | `02-two-factor` | TOTP two-factor enrollment and recovery |
-| 03 | `03-caddy-pairing` | Forward-auth integration with Caddy |
-| 04 | `04-access-rules` | Access control rules per service and user group |
+| Path | Purpose | Evidence level |
+|---|---|---|
+| [01-isolated-access-control](examples/01-isolated-access-control/) | Loopback-bound Compose service; deny-by-default policy with explicit demo rules; synthetic identity placeholder | Configuration contract tests included; runtime validation still required |
 
-## Repository layout
+Run the example instructions from [its README](examples/01-isolated-access-control/README.md). The user password hash is deliberately invalid until replaced locally with a throwaway generated hash; never commit credentials.
 
-```text
-authelia-cookbook/
-├── examples/          # pattern passes, landing in follow-up work
-├── README.md
-└── LICENSE
-```
+## Safety and operational limits
+
+- Do not expose the example to a public network or use real accounts.
+- A bypass rule is included only for a clearly named reserved demo domain; do not copy it blindly into a real deployment.
+- Authentication policy does not prove reverse-proxy correctness. Verify trusted headers, direct-origin access, TLS, session cookies, MFA, recovery, and authorization end to end.
+- Automated checks cover only configured paths and environments and do not constitute security certification.
 
 ## Roadmap
 
-- First pattern pass: the first two table rows
-- Second pass: the remaining rows, from fleet-verified setups
+1. Validate the current example against the pinned image with Docker Compose config and Authelia's own configuration validation.
+2. Add an isolated reverse-proxy integration test with explicit allow/deny cases.
+3. Add MFA/recovery guidance and versioned test evidence only after those paths are exercised.
 
 ## Contributing
 
-A contributing guide lands with the first pattern pass. Report security issues to <zqmcomputing@gmail.com> — please do not open a public issue for those.
+Keep examples synthetic and reproducible. Report security issues to <zqmcomputing@gmail.com>; do not disclose vulnerabilities in public issues.
 
 ## More from this series
 
-- [caddy-cookbook](https://github.com/ZQM-Computing/caddy-cookbook) — Automatic-HTTPS reverse proxying from config and API
-- [vaultwarden-cookbook](https://github.com/ZQM-Computing/vaultwarden-cookbook) — Self-hosted password vault with clients and API
-- [portainer-cookbook](https://github.com/ZQM-Computing/portainer-cookbook) — Container management with an API and UI
+- [caddy-cookbook](https://github.com/ZQM-Computing/caddy-cookbook) — HTTPS reverse proxy patterns
+- [vaultwarden-cookbook](https://github.com/ZQM-Computing/vaultwarden-cookbook) — Self-hosted password vault and synthetic backup/restore drill
+- [portainer-cookbook](https://github.com/ZQM-Computing/portainer-cookbook) — Container management
