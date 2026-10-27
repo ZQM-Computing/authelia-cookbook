@@ -88,6 +88,30 @@ jobs:
           echo "Authelia did not become healthy within 60 seconds." >&2
           docker compose logs --no-color authelia
           exit 1
+      - name: Validate isolated Caddy proxy configuration
+        working-directory: examples/02-proxy-integration
+        run: >-
+          docker run --rm
+          --volume "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro"
+          caddy:2.10.2
+          caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+      - name: Validate proxy fixture Compose topology
+        working-directory: examples/02-proxy-integration
+        run: docker compose config --quiet
+      - name: Start isolated proxy fixture
+        working-directory: examples/02-proxy-integration
+        run: docker compose up -d --no-build
+      - name: Test proxy routing and authorization boundary
+        working-directory: examples/02-proxy-integration
+        run: python -m unittest -v test_proxy_smoke.py
+      - name: Collect proxy fixture logs on failure
+        if: failure()
+        working-directory: examples/02-proxy-integration
+        run: docker compose logs --no-color
+      - name: Stop proxy fixture
+        if: always()
+        working-directory: examples/02-proxy-integration
+        run: docker compose down --volumes --remove-orphans
       - name: Stop isolated service
         if: always()
         working-directory: examples/01-isolated-access-control
