@@ -36,3 +36,10 @@ jobs:
       - name: Validate Compose syntax
         working-directory: examples/01-isolated-access-control
         run: docker compose config --quiet
+      - name: Validate configuration with the pinned Authelia image
+        working-directory: examples/01-isolated-access-control
+        run: >-
+          docker run --rm
+          --volume "$PWD:/config:ro"
+          authelia/authelia:4.38.19
+          authelia config validate --config /config/configuration.yml
