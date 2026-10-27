@@ -4,7 +4,7 @@
 
 **Status: positive-session test implemented; latest full CI run has not passed yet, so authenticated authorization is not yet runtime-verified.** The disposable fixture in [examples/02-proxy-integration](../examples/02-proxy-integration/) now defines Caddy, Authelia, and two synthetic upstreams. Its intended smoke checks cover public routing, denial without a session, unauthenticated identity-header spoofing, deterministic unknown-host handling, and loopback-only port publication. CI smoke evidence: [workflow run 40443070947](https://github.com/ZQM-Computing/authelia-cookbook/actions/runs/40443070947) passed on commit `37a273bb36c419c739032037f5e413639f6c8c7e`. This validates the runtime smoke assertions listed below. Static regression guards now require the protected route's `forward_auth` directive and reject published Authelia/protected-upstream ports; those guards still need a passing CI run and are not a substitute for the positive-session path.
 
-The test suite now attempts a valid synthetic first-factor login and checks protected-upstream access plus the expected identity headers. Treat that positive path as unverified until a complete CI run passes.
+The test suite performs a synthetic first-factor login and checks protected-upstream access plus the expected identity headers. These positive-session and identity-header assertions passed in [workflow run 40445035046](https://github.com/ZQM-Computing/authelia-cookbook/actions/runs/40445035046) on commit `54699ddd0eedeac262ce4e1bb375b936141130a9`. The current head adds explicit mutation tests for both regression guards and still requires a fresh complete CI pass.
 
 ## Fixture safety boundaries
 
@@ -27,7 +27,7 @@ The test suite now attempts a valid synthetic first-factor login and checks prot
 6. The protected upstream and Authelia have no published host ports; only Caddy is published, explicitly bound to loopback.
 7. CI collects fixture logs on failure and tears down both the fixture and the original isolated service.
 
-The positive-path assertion is intended to prove authenticated access for this pinned fixture only; its latest run failed while parsing the synthetic upstream response, and that parser defect has been corrected. A clean rerun is required before relying on the assertion.
+The positive-path assertion proves authenticated access only for this pinned fixture. It deliberately supplies client-forged identity headers alongside the valid session and verifies the upstream receives the authenticated demo identity, not the forged values.
 
 ## Remaining mandatory authorization work
 
