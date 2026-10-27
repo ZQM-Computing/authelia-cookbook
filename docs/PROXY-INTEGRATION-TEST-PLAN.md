@@ -2,9 +2,9 @@
 
 ## Status and scope
 
-**Status: partial smoke fixture added; full authorization coverage is not implemented or runtime-verified.** The disposable fixture in [examples/02-proxy-integration](../examples/02-proxy-integration/) now defines Caddy, Authelia, and two synthetic upstreams. Its intended smoke checks cover public routing, denial without a session, unauthenticated identity-header spoofing, deterministic unknown-host handling, and loopback-only port publication. CI smoke evidence: [workflow run 40443070947](https://github.com/ZQM-Computing/authelia-cookbook/actions/runs/40443070947) passed on commit `37a273bb36c419c739032037f5e413639f6c8c7e`. This validates the runtime smoke assertions listed below. Static regression guards now require the protected route's `forward_auth` directive and reject published Authelia/protected-upstream ports; those guards still need a passing CI run and are not a substitute for the positive-session path.
+**Status: positive-session test implemented; latest full CI run has not passed yet, so authenticated authorization is not yet runtime-verified.** The disposable fixture in [examples/02-proxy-integration](../examples/02-proxy-integration/) now defines Caddy, Authelia, and two synthetic upstreams. Its intended smoke checks cover public routing, denial without a session, unauthenticated identity-header spoofing, deterministic unknown-host handling, and loopback-only port publication. CI smoke evidence: [workflow run 40443070947](https://github.com/ZQM-Computing/authelia-cookbook/actions/runs/40443070947) passed on commit `37a273bb36c419c739032037f5e413639f6c8c7e`. This validates the runtime smoke assertions listed below. Static regression guards now require the protected route's `forward_auth` directive and reject published Authelia/protected-upstream ports; those guards still need a passing CI run and are not a substitute for the positive-session path.
 
-The current smoke tests do **not** establish a valid authenticated session or verify identity headers after successful authentication. Do not describe this as complete end-to-end authorization coverage until those positive-path tests are implemented and pass.
+The test suite now attempts a valid synthetic first-factor login and checks protected-upstream access plus the expected identity headers. Treat that positive path as unverified until a complete CI run passes.
 
 ## Fixture safety boundaries
 
@@ -27,15 +27,13 @@ The current smoke tests do **not** establish a valid authenticated session or ve
 6. The protected upstream and Authelia have no published host ports; only Caddy is published, explicitly bound to loopback.
 7. CI collects fixture logs on failure and tears down both the fixture and the original isolated service.
 
-These are smoke tests, not proof that an authenticated user can reach the protected upstream.
+The positive-path assertion is intended to prove authenticated access for this pinned fixture only; its latest run failed while parsing the synthetic upstream response, and that parser defect has been corrected. A clean rerun is required before relying on the assertion.
 
 ## Remaining mandatory authorization work
 
-1. Establish a valid session through a supported Authelia login flow using only the synthetic demo account.
-2. Prove the valid session reaches the protected upstream and returns its marker.
-3. Verify identity headers delivered after successful authentication are the expected synthetic identity, not client-supplied spoofed values.
-4. Verify the regression guard fails when removing Caddy `forward_auth` and when publishing the protected upstream port; current checks are static configuration assertions, not mutation-run demonstrations.
-5. Establish the positive-session test as a required CI assertion; ensure it cannot be skipped while reporting full authorization coverage.
+1. Obtain a clean CI pass for the valid-session and identity-header assertions.
+2. Demonstrate the regression checks fail under deliberate `forward_auth` removal and protected-upstream port publication; the current guards are static configuration assertions, not mutation-run demonstrations.
+3. Keep the positive-session assertion required and ensure it cannot be skipped while reporting full authorization coverage.
 
 If the CI fixture cannot establish a valid session without brittle internals, document the limitation and keep claims narrow; do not weaken or silently skip the positive assertion.
 
