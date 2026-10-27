@@ -48,17 +48,17 @@ def request(host: str, headers: dict[str, str] | None = None, *, secure: bool = 
 
 def assert_forward_auth_contract(caddyfile: str) -> None:
     protected_site = re.search(
-        r"https://protected\\.example\\.test:8443\\s*\\{(.*?)\\n\\}",
+        r"https://protected\.example\.test:8443\s*\{(.*?)\n\}",
         caddyfile,
         flags=re.DOTALL,
     )
     assert protected_site is not None, "Protected virtual host definition is missing"
     assert re.search(
-        r"(?m)^\\s*forward_auth\\s+authelia:9091\\s*\\{",
+        r"(?m)^\s*forward_auth\s+authelia:9091\s*\{",
         protected_site.group(1),
     ), "Protected route must enforce Authelia forward_auth"
     assert re.search(
-        r"(?m)^\\s*uri\\s+/api/authz/forward-auth\\s*$",
+        r"(?m)^\s*uri\s+/api/authz/forward-auth\s*$",
         protected_site.group(1),
     ), "Protected route must use Authelia's forward-auth endpoint"
 
@@ -216,7 +216,7 @@ class ProxyIntegrationSmokeTests(unittest.TestCase):
     def test_forward_auth_guard_rejects_removed_directive(self):
         caddyfile = (ROOT / "Caddyfile").read_text()
         mutated = re.sub(
-            r"(?m)^\\s*forward_auth\\s+authelia:9091\\s*\\{\\s*$",
+            r"(?m)^\s*forward_auth\s+authelia:9091\s*\{\s*$",
             "",
             caddyfile,
         )
