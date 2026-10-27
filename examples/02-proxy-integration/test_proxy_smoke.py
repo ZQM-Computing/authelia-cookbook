@@ -86,8 +86,10 @@ class ProxyIntegrationSmokeTests(unittest.TestCase):
         self.assertNotIn("PROTECTED_UPSTREAM_MARKER", body)
 
     def test_valid_session_reaches_upstream_with_verified_identity(self):
-        password = os.environ.get("DEMO_PASSWORD")
-        self.assertTrue(password, "CI must provide a throwaway DEMO_PASSWORD")
+        password_file = os.environ.get("DEMO_PASSWORD_FILE")
+        self.assertTrue(password_file, "CI must provide a path to the throwaway demo password")
+        password = Path(password_file).read_text(encoding="utf-8").strip()
+        self.assertTrue(password, "Throwaway demo password file must not be empty")
 
         payload = json.dumps({
             "username": "demo",
@@ -131,7 +133,10 @@ class ProxyIntegrationSmokeTests(unittest.TestCase):
         )
         self.assertEqual(status, 200, f"Authenticated session did not reach upstream: {body}")
         self.assertIn("PROTECTED_UPSTREAM_MARKER", body)
-        identity = json.loads(body.splitlines()[-1])
+        marker, separator, identity_json = body.partition("\n")
+        self.assertEqual(marker, "PROTECTED_UPSTREAM_MARKER")
+        self.assertTrue(separator, f"Protected upstream omitted its identity payload: {body!r}")
+        identity = json.loads(identity_json.strip())
         self.assertEqual(identity["Remote-User"], "demo")
         self.assertEqual(identity["Remote-Groups"], "demo-users")
         self.assertEqual(identity["Remote-Name"], "Demo User")
