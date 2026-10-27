@@ -1,21 +1,41 @@
 """Smoke-test the disposable Caddy/Authelia proxy fixture.
 
-This intentionally tests public routing, unauthenticated denial, unknown hosts,
-spoofed identity headers, and host-port exposure. It does not yet establish a
-valid Authelia browser session, so it is not full authorization coverage.
+This tests public routing, unauthenticated denial, unknown hosts, spoofed
+identity headers, and host-port exposure. It does not yet establish a valid
+Authelia browser session, so it is not full authorization coverage.
 """
-from http.client import HTTPConnection
+from http.client import HTTPConnection, HTTPSConnection
 import json
 from pathlib import Path
+import socket
+import ssl
 import subprocess
+import time
 import unittest
 
 ROOT = Path(__file__).parent
 DENIAL_STATUSES = {302, 401, 403}
 
 
-def request(host: str, headers: dict[str, str] | None = None):
-    connection = HTTPConnection("127.0.0.1", 18080, timeout=5)
+class SNIHTTPSConnection(HTTPSConnection):
+    """Connect to loopback while using the requested virtual host for TLS SNI."""
+
+    def __init__(self, server_name: str, port: int, timeout: int = 5):
+        self.server_name = server_name
+        super().__init__("127.0.0.1", port, timeout=timeout, context=ssl._create_unverified_context())
+
+    def connect(self):
+        sock = socket.create_connection((self.host, self.port), self.timeout, self.source_address)
+        self.sock = self._context.wrap_socket(sock, server_hostname=self.server_name)
+
+
+def request(host: str, headers: dict[str, str] | None = None, *, secure: bool = False):
+    if secure:
+        connection = SNIHTTPSConnection(host, 18443)
+        port = 18443
+    else:
+        connection = HTTPConnection("127.0.0.1", 18080, timeout=5)
+        port = 18080
     try:
         connection.request("GET", "/", headers={"Host": host, **(headers or {})})
         response = connection.getresponse()
@@ -33,12 +53,24 @@ class ProxyIntegrationSmokeTests(unittest.TestCase):
                 status, body = request("public.example.test")
                 last_result = f"HTTP {status}: {body[:300]!r}"
                 if status == 200 and "PUBLIC_UPSTREAM_MARKER" in body:
+                    break
+            except OSError as exc:
+                last_result = repr(exc)
+            time.sleep(1)
+        else:
+            raise RuntimeError(f"Caddy fixture did not return the public marker; last result: {last_result}")
+
+        last_result = "no HTTPS response"
+        for attempt in range(15):
+            try:
+                status, body = request("protected.example.test", secure=True)
+                last_result = f"HTTPS {status}: {body[:300]!r}"
+                if status in DENIAL_STATUSES:
                     return
             except OSError as exc:
                 last_result = repr(exc)
-            import time
             time.sleep(1)
-        raise RuntimeError(f"Caddy fixture did not return the public marker; last result: {last_result}")
+        raise RuntimeError(f"HTTPS protected route did not become ready; last result: {last_result}")
 
     def test_public_host_reaches_only_public_marker(self):
         status, body = request("public.example.test")
@@ -47,7 +79,7 @@ class ProxyIntegrationSmokeTests(unittest.TestCase):
         self.assertNotIn("PROTECTED_UPSTREAM_MARKER", body)
 
     def test_protected_host_denies_request_without_session(self):
-        status, body = request("protected.example.test")
+        status, body = request("protected.example.test", secure=True)
         self.assertIn(status, DENIAL_STATUSES, f"Expected denial/redirect, got {status}: {body}")
         self.assertNotIn("PROTECTED_UPSTREAM_MARKER", body)
 
@@ -60,6 +92,7 @@ class ProxyIntegrationSmokeTests(unittest.TestCase):
                 "Remote-Name": "Spoofed Identity",
                 "Remote-Email": "spoofed@example.test",
             },
+            secure=True,
         )
         self.assertIn(status, DENIAL_STATUSES, f"Identity spoofing bypassed authorization: {status}: {body}")
         self.assertNotIn("PROTECTED_UPSTREAM_MARKER", body)
@@ -70,7 +103,7 @@ class ProxyIntegrationSmokeTests(unittest.TestCase):
         self.assertNotIn("PUBLIC_UPSTREAM_MARKER", body)
         self.assertNotIn("PROTECTED_UPSTREAM_MARKER", body)
 
-    def test_only_loopback_caddy_listener_is_published(self):
+    def test_only_loopback_caddy_listeners_are_published(self):
         rendered = subprocess.run(
             ["docker", "compose", "-f", "compose.yaml", "config", "--format", "json"],
             cwd=ROOT,
@@ -83,9 +116,15 @@ class ProxyIntegrationSmokeTests(unittest.TestCase):
         for service_name, service in config["services"].items():
             for port in service.get("ports", []):
                 published.append((service_name, port.get("host_ip"), str(port.get("published")), str(port.get("target"))))
-        self.assertEqual(published, [("caddy", "127.0.0.1", "18080", "8080")])
+        self.assertEqual(
+            published,
+            [
+                ("caddy", "127.0.0.1", "18080", "8080"),
+                ("caddy", "127.0.0.1", "18443", "8443"),
+            ],
+        )
 
-    def test_compose_network_is_internal(self):
+    def test_private_network_is_internal(self):
         rendered = subprocess.run(
             ["docker", "compose", "-f", "compose.yaml", "config", "--format", "json"],
             cwd=ROOT,
