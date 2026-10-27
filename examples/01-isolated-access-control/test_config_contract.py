@@ -94,7 +94,7 @@ class AccessControlContractTests(unittest.TestCase):
 
     def test_proxy_plan_requires_positive_authenticated_access(self):
         self.assertIn("establish a valid session", PROXY_PLAN.lower())
-        self.assertIn("reaches the protected upstream", PROXY_PLAN.lower())
+        self.assertIn("checks protected-upstream access", PROXY_PLAN.lower())
         self.assertIn("positive assertion", PROXY_PLAN.lower())
         self.assertIn("mandatory authorization work", PROXY_PLAN.lower())
 
