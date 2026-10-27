@@ -1,6 +1,6 @@
 services:
   authelia:
-    image: authelia/authelia:4.38.19
+    image: authelia/authelia:4.39.28
     container_name: authelia-example
     command: ["authelia", "--config", "/config/configuration.yml"]
     ports:
