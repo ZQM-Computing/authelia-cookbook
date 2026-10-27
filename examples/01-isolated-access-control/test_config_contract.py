@@ -22,22 +22,31 @@ class AccessControlContractTests(unittest.TestCase):
         self.assertNotIn("domain: '*'", CONFIG)
 
     def test_protected_domain_requires_authentication(self):
-        self.assertIn('domain: "protected.example.test"\n      policy: one_factor', CONFIG)
+        self.assertIn('domain: "protected.example.test"\\n      policy: one_factor', CONFIG)
 
     def test_port_is_loopback_only(self):
         self.assertIn('"127.0.0.1:9091:9091"', COMPOSE)
+        self.assertNotIn('"9091:9091"', COMPOSE)
+
+    def test_image_uses_an_explicit_version_not_latest(self):
+        self.assertIn("image: authelia/authelia:4.39.28", COMPOSE)
+        self.assertNotIn(":latest", COMPOSE)
+
+    def test_container_does_not_restart_automatically(self):
+        self.assertIn('restart: "no"', COMPOSE)
 
     def test_external_cookie_urls_use_https(self):
         self.assertIn('authelia_url: "https://auth.example.test"', CONFIG)
         self.assertIn('default_redirection_url: "https://protected.example.test"', CONFIG)
 
     def test_required_demo_secrets_are_explicit_placeholders(self):
-        self.assertIn("jwt_secret: \"synthetic-demo-", CONFIG)
-        self.assertIn("encryption_key: \"synthetic-demo-", CONFIG)
+        self.assertIn('jwt_secret: "synthetic-demo-', CONFIG)
+        self.assertIn('encryption_key: "synthetic-demo-', CONFIG)
 
     def test_credentials_are_obviously_synthetic_and_incomplete(self):
         self.assertIn("REPLACE_WITH_A_REAL_AUTHELIA_GENERATED_HASH", USERS)
         self.assertIn("example.test", USERS)
+        self.assertNotIn("password:", USERS.lower())
 
 
 if __name__ == "__main__":
