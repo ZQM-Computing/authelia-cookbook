@@ -95,12 +95,13 @@ class AccessControlContractTests(unittest.TestCase):
     def test_proxy_plan_requires_positive_authenticated_access(self):
         self.assertRegex(PROXY_PLAN, r"(?i)valid session.{0,120}protected route")
         self.assertIn("positive assertion", PROXY_PLAN.lower())
-        self.assertIn("positive assertion is mandatory", PROXY_PLAN.lower())
+        self.assertIn("positive assertion", PROXY_PLAN.lower())
+        self.assertIn("mandatory authorization work", PROXY_PLAN.lower())
 
     def test_proxy_plan_makes_unknown_host_behavior_deterministic(self):
         self.assertIn("deterministic", PROXY_PLAN.lower())
         self.assertRegex(PROXY_PLAN, r"(?i)\b404\b")
-        self.assertIn("neither synthetic upstream marker", PROXY_PLAN)
+        self.assertIn("neither upstream marker appears", PROXY_PLAN)
 
     def test_proxy_plan_covers_spoofing_exposure_and_regressions(self):
         for phrase in (
@@ -109,7 +110,7 @@ class AccessControlContractTests(unittest.TestCase):
             "published host ports",
             "removing `forward_auth`",
             "publishing the protected upstream port",
-            "always cleans up",
+            "always tear down containers",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, PROXY_PLAN)
