@@ -6,6 +6,7 @@ Authelia browser session, so it is not full authorization coverage.
 """
 from http.client import HTTPConnection, HTTPSConnection
 import json
+import os
 from pathlib import Path
 import re
 import socket
@@ -83,6 +84,58 @@ class ProxyIntegrationSmokeTests(unittest.TestCase):
         status, body = request("protected.example.test", secure=True)
         self.assertIn(status, DENIAL_STATUSES, f"Expected denial/redirect, got {status}: {body}")
         self.assertNotIn("PROTECTED_UPSTREAM_MARKER", body)
+
+    def test_valid_session_reaches_upstream_with_verified_identity(self):
+        password = os.environ.get("DEMO_PASSWORD")
+        self.assertTrue(password, "CI must provide a throwaway DEMO_PASSWORD")
+
+        payload = json.dumps({
+            "username": "demo",
+            "password": password,
+            "keepMeLoggedIn": False,
+            "targetURL": "https://protected.example.test:18443/",
+        })
+        connection = SNIHTTPSConnection("auth.example.test", 18443)
+        try:
+            connection.request(
+                "POST",
+                "/api/firstfactor",
+                body=payload,
+                headers={
+                    "Host": "auth.example.test",
+                    "Content-Type": "application/json",
+                    "Origin": "https://auth.example.test:18443",
+                    "Referer": "https://auth.example.test:18443/",
+                },
+            )
+            login = connection.getresponse()
+            login_body = login.read().decode("utf-8", errors="replace")
+            self.assertEqual(login.status, 200, f"Authelia first-factor login failed: {login_body}")
+            set_cookie = login.getheader("Set-Cookie")
+            self.assertTrue(set_cookie, f"Successful login did not set a session cookie: {login_body}")
+            cookie = set_cookie.split(";", 1)[0]
+            self.assertIn("=", cookie)
+        finally:
+            connection.close()
+
+        status, body = request(
+            "protected.example.test",
+            {
+                "Cookie": cookie,
+                "Remote-User": "spoofed-user",
+                "Remote-Groups": "admins",
+                "Remote-Name": "Spoofed Identity",
+                "Remote-Email": "spoofed@example.test",
+            },
+            secure=True,
+        )
+        self.assertEqual(status, 200, f"Authenticated session did not reach upstream: {body}")
+        self.assertIn("PROTECTED_UPSTREAM_MARKER", body)
+        identity = json.loads(body.splitlines()[-1])
+        self.assertEqual(identity["Remote-User"], "demo")
+        self.assertEqual(identity["Remote-Groups"], "demo-users")
+        self.assertEqual(identity["Remote-Name"], "Demo User")
+        self.assertEqual(identity["Remote-Email"], "demo@example.test")
 
     def test_client_cannot_spoof_identity_headers_to_bypass_auth(self):
         status, body = request(
