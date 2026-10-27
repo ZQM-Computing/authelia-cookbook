@@ -21,14 +21,18 @@ session:
   secret: "replace-this-local-demo-session-secret-before-use"
   cookies:
     - domain: "example.test"
-      authelia_url: "http://auth.example.test:9091"
-      default_redirection_url: "http://protected.example.test"
+      authelia_url: "https://auth.example.test"
+      default_redirection_url: "https://protected.example.test"
       same_site: lax
 regulation:
   max_retries: 3
   find_time: 2m
   ban_time: 5m
+identity_validation:
+  reset_password:
+    jwt_secret: "synthetic-demo-jwt-secret-change-before-use-0123456789abcdef"
 storage:
+  encryption_key: "synthetic-demo-storage-encryption-key-change-before-use"
   local:
     path: /config/db.sqlite3
 notifier:
