@@ -34,7 +34,7 @@ These are smoke tests, not proof that an authenticated user can reach the protec
 1. Establish a valid session through a supported Authelia login flow using only the synthetic demo account.
 2. Prove the valid session reaches the protected upstream and returns its marker.
 3. Verify identity headers delivered after successful authentication are the expected synthetic identity, not client-supplied spoofed values.
-4. Run the newly added static regression guards in CI and verify they fail when `forward_auth` is removed or protected upstream ports are published.
+4. Verify the regression guard fails when removing Caddy `forward_auth` and when publishing the protected upstream port; current checks are static configuration assertions, not mutation-run demonstrations.
 5. Establish the positive-session test as a required CI assertion; ensure it cannot be skipped while reporting full authorization coverage.
 
 If the CI fixture cannot establish a valid session without brittle internals, document the limitation and keep claims narrow; do not weaken or silently skip the positive assertion.
