@@ -93,8 +93,8 @@ class AccessControlContractTests(unittest.TestCase):
         self.assertIn('email: "demo@example.test"', USERS)
 
     def test_proxy_plan_requires_positive_authenticated_access(self):
-        self.assertRegex(PROXY_PLAN, r"(?i)valid session.{0,120}protected route")
-        self.assertIn("positive assertion", PROXY_PLAN.lower())
+        self.assertIn("establish a valid session", PROXY_PLAN.lower())
+        self.assertIn("reaches the protected upstream", PROXY_PLAN.lower())
         self.assertIn("positive assertion", PROXY_PLAN.lower())
         self.assertIn("mandatory authorization work", PROXY_PLAN.lower())
 
