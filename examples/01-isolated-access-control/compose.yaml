@@ -1,0 +1,13 @@
+services:
+  authelia:
+    image: authelia/authelia:4.38.19
+    container_name: authelia-example
+    command: ["authelia", "--config", "/config/configuration.yml"]
+    ports:
+      - "127.0.0.1:9091:9091"
+    volumes:
+      - ./configuration.yml:/config/configuration.yml:ro
+      - ./users_database.yml:/config/users_database.yml:ro
+    environment:
+      TZ: UTC
+    restart: "no"
