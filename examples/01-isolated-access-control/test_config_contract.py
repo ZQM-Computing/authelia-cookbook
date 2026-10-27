@@ -55,8 +55,8 @@ class AccessControlContractTests(unittest.TestCase):
         self.assertNotRegex(COMPOSE, r'(?m)^\s+-\s*["\']?(?:0\.0\.0\.0|::):9091:9091')
 
     def test_only_authelia_port_is_published(self):
-        ports_section = COMPOSE.split("    ports:", 1)[1].split("\n    ", 1)[0]
-        published_ports = re.findall(r'(?m)^\s+-\s*["\']?([^"\'\n]+)', ports_section)
+        ports_section = COMPOSE.split("    ports:", 1)[1].split("\n    volumes:", 1)[0]
+        published_ports = re.findall(r'(?m)^\s+-\s*["\']?([^"\'\n]+)["\']?\s*$', ports_section)
         self.assertEqual(
             published_ports,
             ["127.0.0.1:9091:9091"],
