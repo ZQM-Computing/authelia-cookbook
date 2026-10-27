@@ -30,12 +30,38 @@ class AccessControlContractTests(unittest.TestCase):
             "Unexpected additional or reordered access-control domain rules; review policy explicitly.",
         )
 
+    def test_public_demo_host_is_the_only_bypass(self):
+        policy_section = CONFIG.split("access_control:", 1)[1].split("\nsession:", 1)[0]
+        policies = re.findall(
+            r'^\s+- domain: ("[^"]+")\n\s+policy: ([a-z_]+)$',
+            policy_section,
+            flags=re.MULTILINE,
+        )
+        self.assertEqual(
+            policies,
+            [
+                ('"public.example.test"', "bypass"),
+                ('"protected.example.test"', "one_factor"),
+            ],
+            "Public bypass and protected authentication policies must remain explicit and paired with their hosts.",
+        )
+
     def test_protected_domain_requires_authentication(self):
         self.assertIn('domain: "protected.example.test"\n      policy: one_factor', CONFIG)
 
     def test_port_is_loopback_only(self):
         self.assertIn('"127.0.0.1:9091:9091"', COMPOSE)
         self.assertNotIn('"9091:9091"', COMPOSE)
+        self.assertNotRegex(COMPOSE, r'(?m)^\s+-\s*["\']?(?:0\.0\.0\.0|::):9091:9091')
+
+    def test_only_authelia_port_is_published(self):
+        ports_section = COMPOSE.split("    ports:", 1)[1].split("\n    ", 1)[0]
+        published_ports = re.findall(r'(?m)^\s+-\s*["\']?([^"\'\n]+)', ports_section)
+        self.assertEqual(
+            published_ports,
+            ["127.0.0.1:9091:9091"],
+            "Unexpected published port; review exposure before changing the example.",
+        )
 
     def test_config_and_user_database_mount_read_only(self):
         self.assertIn("./configuration.yml:/config/configuration.yml:ro", COMPOSE)
