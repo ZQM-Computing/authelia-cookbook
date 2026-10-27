@@ -9,8 +9,8 @@ The current smoke tests do **not** establish a valid authenticated session or ve
 ## Fixture safety boundaries
 
 - Pin Caddy, Authelia, and test-upstream images to explicit versions; avoid floating `latest` tags.
-- Put all services on a dedicated internal Compose network.
-- Publish only the Caddy test listener, bound to `127.0.0.1`; do not publish Authelia or either upstream.
+- Keep Authelia and both upstreams on a dedicated internal Compose network. Caddy also joins a separate host-access bridge so its loopback-published test listeners remain reachable from the runner.
+- Publish only Caddy test listeners, both bound to `127.0.0.1`; do not publish Authelia or either upstream. Use HTTPS for protected/auth-portal requests because Authelia requires secure schemes for session-cookie authorization.
 - Use reserved `.test` hostnames and synthetic marker responses. No production domains, identities, credentials, or secrets.
 - Configure Caddy `forward_auth` against Authelia's documented forward-auth endpoint and copy only the identity headers required by the test.
 - Keep the fixture isolated from production services and never broaden trusted proxy ranges to make a test pass.
