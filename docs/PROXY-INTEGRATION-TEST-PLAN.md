@@ -2,7 +2,7 @@
 
 ## Status and scope
 
-**Status: partial smoke fixture added; full authorization coverage is not implemented or runtime-verified.** The disposable fixture in [examples/02-proxy-integration](../examples/02-proxy-integration/) now defines Caddy, Authelia, and two synthetic upstreams. Its intended smoke checks cover public routing, denial without a session, unauthenticated identity-header spoofing, deterministic unknown-host handling, and loopback-only port publication. CI smoke evidence: [workflow run 40443070947](https://github.com/ZQM-Computing/authelia-cookbook/actions/runs/40443070947) passed on commit `37a273bb36c419c739032037f5e413639f6c8c7e`. This validates only the smoke assertions listed below; it does not close the positive-session or deliberate-regression gaps.
+**Status: partial smoke fixture added; full authorization coverage is not implemented or runtime-verified.** The disposable fixture in [examples/02-proxy-integration](../examples/02-proxy-integration/) now defines Caddy, Authelia, and two synthetic upstreams. Its intended smoke checks cover public routing, denial without a session, unauthenticated identity-header spoofing, deterministic unknown-host handling, and loopback-only port publication. CI smoke evidence: [workflow run 40443070947](https://github.com/ZQM-Computing/authelia-cookbook/actions/runs/40443070947) passed on commit `37a273bb36c419c739032037f5e413639f6c8c7e`. This validates the runtime smoke assertions listed below. Static regression guards now require the protected route's `forward_auth` directive and reject published Authelia/protected-upstream ports; those guards still need a passing CI run and are not a substitute for the positive-session path.
 
 The current smoke tests do **not** establish a valid authenticated session or verify identity headers after successful authentication. Do not describe this as complete end-to-end authorization coverage until those positive-path tests are implemented and pass.
 
@@ -34,9 +34,8 @@ These are smoke tests, not proof that an authenticated user can reach the protec
 1. Establish a valid session through a supported Authelia login flow using only the synthetic demo account.
 2. Prove the valid session reaches the protected upstream and returns its marker.
 3. Verify identity headers delivered after successful authentication are the expected synthetic identity, not client-supplied spoofed values.
-4. Demonstrate that removing Caddy `forward_auth` makes the protected-route test fail.
-5. Demonstrate that publishing the protected upstream port makes the exposure assertion fail.
-6. Ensure a missing or skipped positive-path test cannot be reported as full authorization coverage.
+4. Run the newly added static regression guards in CI and verify they fail when `forward_auth` is removed or protected upstream ports are published.
+5. Establish the positive-session test as a required CI assertion; ensure it cannot be skipped while reporting full authorization coverage.
 
 If the CI fixture cannot establish a valid session without brittle internals, document the limitation and keep claims narrow; do not weaken or silently skip the positive assertion.
 
