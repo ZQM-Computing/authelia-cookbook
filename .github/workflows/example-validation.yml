@@ -55,6 +55,7 @@ jobs:
         run: |
           set -euo pipefail
           demo_password="$(python -c 'import secrets; print(secrets.token_urlsafe(24))')"
+          echo "DEMO_PASSWORD=$demo_password" >> "$GITHUB_ENV"
           hash_output="$(docker run --rm authelia/authelia:4.39.28 authelia crypto hash generate argon2 --password "$demo_password")"
           password_hash="$(printf '%s\n' "$hash_output" | sed -n 's/^Digest: //p' | head -n 1)"
           if [[ "$password_hash" != \$argon2* ]]; then
