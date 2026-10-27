@@ -1,0 +1,23 @@
+{
+	auto_https off
+}
+
+http://public.example.test:8080 {
+	reverse_proxy public-app:80
+}
+
+http://protected.example.test:8080 {
+	forward_auth authelia:9091 {
+		uri /api/authz/forward-auth
+		copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+	}
+	reverse_proxy protected-app:80
+}
+
+http://auth.example.test:8080 {
+	reverse_proxy authelia:9091
+}
+
+:8080 {
+	respond "unknown test host" 404
+}
