@@ -109,7 +109,7 @@ class AccessControlContractTests(unittest.TestCase):
             "remote-groups",
             "published host ports",
             "deliberate `forward_auth` removal",
-            "publishing the protected upstream port",
+            "protected-upstream port publication",
             "always tear down containers",
         ):
             with self.subTest(phrase=phrase):
