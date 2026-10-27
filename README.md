@@ -46,7 +46,7 @@ Run the example instructions from [its README](examples/01-isolated-access-contr
 
 ## Roadmap
 
-1. Add an isolated reverse-proxy integration test with explicit allow/deny cases, including the protected route, the intentionally bypassed demo route, and an unlisted host.
+1. Implement the isolated reverse-proxy integration fixture described in the [proxy authorization integration test plan](docs/PROXY-INTEGRATION-TEST-PLAN.md). The plan is a specification, not evidence that the fixture exists or passes.
 2. Test proxy header handling and confirm direct access to the protected upstream cannot bypass the proxy's authorization decision.
 3. Add MFA and recovery guidance only after those flows have been exercised and the tested version/environment is recorded.
 
