@@ -45,6 +45,29 @@ jobs:
           --volume "$PWD:/config:ro"
           authelia/authelia:4.39.28
           authelia config validate --config /config/configuration.yml
+      - name: Generate an ephemeral valid demo password hash
+        working-directory: examples/01-isolated-access-control
+        shell: bash
+        run: |
+          set -euo pipefail
+          demo_password="$(python -c 'import secrets; print(secrets.token_urlsafe(24))')"
+          hash_output="$(docker run --rm authelia/authelia:4.39.28 authelia crypto hash generate argon2 --password "$demo_password")"
+          password_hash="$(printf '%s\n' "$hash_output" | sed -n 's/^Digest: //p' | head -n 1)"
+          if [[ "$password_hash" != \$argon2* ]]; then
+            echo "Authelia CLI did not return an Argon2 digest in the expected format." >&2
+            printf '%s\n' "$hash_output" >&2
+            exit 1
+          fi
+          DEMO_HASH="$password_hash" python - <<'PY'
+          import os
+          from pathlib import Path
+          path = Path("users_database.yml")
+          content = path.read_text()
+          placeholder = "$argon2id$REPLACE_WITH_A_REAL_AUTHELIA_GENERATED_HASH"
+          if placeholder not in content:
+              raise SystemExit("Expected documented demo hash placeholder was not found.")
+          path.write_text(content.replace(placeholder, os.environ["DEMO_HASH"]))
+          PY
       - name: Start isolated Authelia service
         working-directory: examples/01-isolated-access-control
         run: docker compose up -d --no-build
