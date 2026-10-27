@@ -24,8 +24,8 @@ class AccessControlContractTests(unittest.TestCase):
         self.assertIn('domain: "protected.example.test"', CONFIG)
         self.assertNotIn("domain: '*'", CONFIG)
         self.assertNotIn('domain: "*.example.test"', CONFIG)
-        policy_section = CONFIG.split("access_control:", 1)[1].split("\\nsession:", 1)[0]
-        domains = re.findall(r'^\\s+- domain: (.+)$', policy_section, flags=re.MULTILINE)
+        policy_section = CONFIG.split("access_control:", 1)[1].split("\nsession:", 1)[0]
+        domains = re.findall(r'^\s+- domain: (.+)$', policy_section, flags=re.MULTILINE)
         self.assertEqual(
             domains,
             ['"public.example.test"', '"protected.example.test"'],
@@ -33,9 +33,9 @@ class AccessControlContractTests(unittest.TestCase):
         )
 
     def test_public_demo_host_is_the_only_bypass(self):
-        policy_section = CONFIG.split("access_control:", 1)[1].split("\\nsession:", 1)[0]
+        policy_section = CONFIG.split("access_control:", 1)[1].split("\nsession:", 1)[0]
         policies = re.findall(
-            r'^\\s+- domain: ("[^"]+")\\n\\s+policy: ([a-z_]+)$',
+            r'^\s+- domain: ("[^"]+")\n\s+policy: ([a-z_]+)$',
             policy_section,
             flags=re.MULTILINE,
         )
@@ -49,16 +49,16 @@ class AccessControlContractTests(unittest.TestCase):
         )
 
     def test_protected_domain_requires_authentication(self):
-        self.assertIn('domain: "protected.example.test"\\n      policy: one_factor', CONFIG)
+        self.assertIn('domain: "protected.example.test"\n      policy: one_factor', CONFIG)
 
     def test_port_is_loopback_only(self):
         self.assertIn('"127.0.0.1:9091:9091"', COMPOSE)
         self.assertNotIn('"9091:9091"', COMPOSE)
-        self.assertNotRegex(COMPOSE, r'(?m)^\\s+-\\s*["\\']?(?:0\\.0\\.0\\.0|::):9091:9091')
+        self.assertNotRegex(COMPOSE, r'(?m)^\s+-\s*["\']?(?:0\.0\.0\.0|::):9091:9091')
 
     def test_only_authelia_port_is_published(self):
-        ports_section = COMPOSE.split("    ports:", 1)[1].split("\\n    volumes:", 1)[0]
-        published_ports = re.findall(r'(?m)^\\s+-\\s*["\\']?([^"\\'\\n]+)["\\']?\\s*$', ports_section)
+        ports_section = COMPOSE.split("    ports:", 1)[1].split("\n    volumes:", 1)[0]
+        published_ports = re.findall(r'(?m)^\s+-\s*["\']?([^"\'\n]+)["\']?\s*$', ports_section)
         self.assertEqual(
             published_ports,
             ["127.0.0.1:9091:9091"],
@@ -99,7 +99,7 @@ class AccessControlContractTests(unittest.TestCase):
 
     def test_proxy_plan_makes_unknown_host_behavior_deterministic(self):
         self.assertIn("deterministic", PROXY_PLAN.lower())
-        self.assertRegex(PROXY_PLAN, r"(?i)\\b404\\b")
+        self.assertRegex(PROXY_PLAN, r"(?i)\b404\b")
         self.assertIn("neither synthetic upstream marker", PROXY_PLAN)
 
     def test_proxy_plan_covers_spoofing_exposure_and_regressions(self):
