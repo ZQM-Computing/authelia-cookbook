@@ -108,7 +108,7 @@ class AccessControlContractTests(unittest.TestCase):
             "remote-user",
             "remote-groups",
             "published host ports",
-            "removing caddy `forward_auth`",
+            "deliberate `forward_auth` removal",
             "publishing the protected upstream port",
             "always tear down containers",
         ):
