@@ -6,12 +6,14 @@ on:
       - "examples/01-isolated-access-control/**"
       - ".github/workflows/example-validation.yml"
       - "README.md"
+      - "docs/PROXY-INTEGRATION-TEST-PLAN.md"
   push:
     branches: [main]
     paths:
       - "examples/01-isolated-access-control/**"
       - ".github/workflows/example-validation.yml"
       - "README.md"
+      - "docs/PROXY-INTEGRATION-TEST-PLAN.md"
   workflow_dispatch:
 
 permissions:
