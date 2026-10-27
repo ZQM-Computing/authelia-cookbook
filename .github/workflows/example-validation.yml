@@ -12,6 +12,7 @@ on:
     branches: [main]
     paths:
       - "examples/01-isolated-access-control/**"
+      - "examples/02-proxy-integration/**"
       - ".github/workflows/example-validation.yml"
       - "README.md"
       - "docs/PROXY-INTEGRATION-TEST-PLAN.md"
