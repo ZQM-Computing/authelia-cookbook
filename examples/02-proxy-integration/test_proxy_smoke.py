@@ -130,19 +130,19 @@ class ProxyIntegrationSmokeTests(unittest.TestCase):
         # particular request happens to receive a denial for another reason.
         caddyfile = (ROOT / "Caddyfile").read_text()
         protected_site = re.search(
-            r"https://protected\\.example\\.test:8443\\s*\\{(.*?)\\n\\}",
+            r"https://protected\.example\.test:8443\s*\{(.*?)\n\}",
             caddyfile,
             flags=re.DOTALL,
         )
         self.assertIsNotNone(protected_site, "Protected virtual host definition is missing")
         self.assertRegex(
             protected_site.group(1),
-            r"(?m)^\\s*forward_auth\\s+authelia:9091\\s*\\{",
+            r"(?m)^\s*forward_auth\s+authelia:9091\s*\{",
             "Protected route must enforce Authelia forward_auth",
         )
         self.assertRegex(
             protected_site.group(1),
-            r"(?m)^\\s*uri\\s+/api/authz/forward-auth\\s*$",
+            r"(?m)^\s*uri\s+/api/authz/forward-auth\s*$",
             "Protected route must use Authelia's forward-auth endpoint",
         )
 
