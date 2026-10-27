@@ -1,4 +1,4 @@
-"""Small standard-library checks for the documented policy contract.
+""""Small standard-library checks for the documented policy contract.
 
 These checks are deliberately not a YAML parser or an Authelia integration test.
 Run the actual image/config validation separately with Docker Compose.
@@ -20,6 +20,7 @@ class AccessControlContractTests(unittest.TestCase):
         self.assertIn('domain: "public.example.test"', CONFIG)
         self.assertIn('domain: "protected.example.test"', CONFIG)
         self.assertNotIn("domain: '*'", CONFIG)
+        self.assertNotIn('domain: "*.example.test"', CONFIG)
 
     def test_protected_domain_requires_authentication(self):
         self.assertIn('domain: "protected.example.test"\n      policy: one_factor', CONFIG)
@@ -38,8 +39,10 @@ class AccessControlContractTests(unittest.TestCase):
     def test_external_cookie_urls_use_https(self):
         self.assertIn('authelia_url: "https://auth.example.test"', CONFIG)
         self.assertIn('default_redirection_url: "https://protected.example.test"', CONFIG)
+        self.assertIn('domain: "example.test"', CONFIG)
 
-    def test_required_demo_secrets_are_explicit_placeholders(self):
+    def test_all_demo_secrets_are_explicit_placeholders(self):
+        self.assertIn('secret: "replace-this-local-demo-session-secret-before-use"', CONFIG)
         self.assertIn('jwt_secret: "synthetic-demo-', CONFIG)
         self.assertIn('encryption_key: "synthetic-demo-', CONFIG)
 
