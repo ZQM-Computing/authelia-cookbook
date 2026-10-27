@@ -22,7 +22,7 @@ class AccessControlContractTests(unittest.TestCase):
         self.assertNotIn("domain: '*'", CONFIG)
 
     def test_protected_domain_requires_authentication(self):
-        self.assertIn('domain: "protected.example.test"\\n      policy: one_factor', CONFIG)
+        self.assertIn('domain: "protected.example.test"\n      policy: one_factor', CONFIG)
 
     def test_port_is_loopback_only(self):
         self.assertIn('"127.0.0.1:9091:9091"', COMPOSE)
