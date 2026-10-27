@@ -1,0 +1,45 @@
+name: Example validation
+
+on:
+  pull_request:
+    paths:
+      - "examples/01-isolated-access-control/**"
+      - ".github/workflows/example-validation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "examples/01-isolated-access-control/**"
+      - ".github/workflows/example-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: authelia-example-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract-and-compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run configuration contract tests
+        working-directory: examples/01-isolated-access-control
+        run: python -m unittest -v test_config_contract.py
+      - name: Validate Compose syntax
+        working-directory: examples/01-isolated-access-control
+        run: docker compose config --quiet
+      - name: Validate configuration with the pinned Authelia image
+        working-directory: examples/01-isolated-access-control
+        run: >-
+          docker run --rm
+          --volume "$PWD:/config:ro"
+          authelia/authelia:4.39.28
+          authelia config validate --config /config/configuration.yml
