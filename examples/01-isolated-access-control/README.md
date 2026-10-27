@@ -7,7 +7,7 @@ intentionally denies every domain except the explicitly listed policies.
 ## Prerequisites
 
 - Docker Engine and the Docker Compose plugin
-- A local hosts-file or reverse-proxy setup only if testing browser redirects
+- A local HTTPS reverse-proxy and hosts-file setup if testing browser redirects
 - No real accounts, credentials, or production services
 
 ## Validate and start
@@ -19,10 +19,11 @@ docker compose config
 docker run --rm --volume "$PWD:/config:ro" authelia/authelia:4.39.28 authelia config validate --config /config/configuration.yml
 ```
 
-Review the rendered configuration before starting. The user password is an
-intentionally invalid placeholder, so successful authentication is not expected
-until a throwaway test hash is generated using the matching Authelia CLI and
-inserted locally. Do not commit that local replacement.
+Review the rendered configuration before starting. The user password hash is an intentionally invalid placeholder, so successful
+authentication is not expected until a throwaway test hash is generated using
+the matching Authelia CLI and inserted locally. The session, reset-password JWT,
+and storage encryption values are also synthetic placeholders: replace them
+locally for a real test and never commit production secrets.
 
 ```sh
 docker compose up --no-build
