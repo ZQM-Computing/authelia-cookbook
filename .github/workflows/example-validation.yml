@@ -5,11 +5,13 @@ on:
     paths:
       - "examples/01-isolated-access-control/**"
       - ".github/workflows/example-validation.yml"
+      - "README.md"
   push:
     branches: [main]
     paths:
       - "examples/01-isolated-access-control/**"
       - ".github/workflows/example-validation.yml"
+      - "README.md"
   workflow_dispatch:
 
 permissions:
@@ -20,7 +22,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  contract-and-compose:
+  contract-compose-runtime:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -43,3 +45,48 @@ jobs:
           --volume "$PWD:/config:ro"
           authelia/authelia:4.39.28
           authelia config validate --config /config/configuration.yml
+      - name: Generate an ephemeral valid demo password hash
+        working-directory: examples/01-isolated-access-control
+        shell: bash
+        run: |
+          set -euo pipefail
+          demo_password="$(python -c 'import secrets; print(secrets.token_urlsafe(24))')"
+          hash_output="$(docker run --rm authelia/authelia:4.39.28 authelia crypto hash generate argon2 --password "$demo_password")"
+          password_hash="$(printf '%s\n' "$hash_output" | sed -n 's/^Digest: //p' | head -n 1)"
+          if [[ "$password_hash" != \$argon2* ]]; then
+            echo "Authelia CLI did not return an Argon2 digest in the expected format." >&2
+            printf '%s\n' "$hash_output" >&2
+            exit 1
+          fi
+          DEMO_HASH="$password_hash" python - <<'PY'
+          import os
+          from pathlib import Path
+          path = Path("users_database.yml")
+          content = path.read_text()
+          placeholder = "$argon2id$REPLACE_WITH_A_REAL_AUTHELIA_GENERATED_HASH"
+          if placeholder not in content:
+              raise SystemExit("Expected documented demo hash placeholder was not found.")
+          path.write_text(content.replace(placeholder, os.environ["DEMO_HASH"]))
+          PY
+      - name: Start isolated Authelia service
+        working-directory: examples/01-isolated-access-control
+        run: docker compose up -d --no-build
+      - name: Verify runtime health endpoint
+        working-directory: examples/01-isolated-access-control
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:9091/api/health; then
+              printf '\nAuthelia health endpoint responded successfully.\n'
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Authelia did not become healthy within 60 seconds." >&2
+          docker compose logs --no-color authelia
+          exit 1
+      - name: Stop isolated service
+        if: always()
+        working-directory: examples/01-isolated-access-control
+        run: docker compose down --volumes --remove-orphans

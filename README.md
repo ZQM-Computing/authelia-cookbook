@@ -21,7 +21,7 @@ An **Authelia cookbook** for single sign-on and two-factor authentication patter
 
 **Portfolio:** Part of the ZQM Computing cookbook collection, indexed by [geospatial-cookbooks](https://github.com/ZQM-Computing/geospatial-cookbooks).
 
-**Evidence boundary:** The included Python tests assert selected configuration text. CI now also invokes Authelia's own configuration validator against the pinned image, but this does not validate a live authentication flow, reverse-proxy integration, or production readiness. See the example README for the remaining runtime checks.
+**Evidence boundary:** The included Python tests assert selected configuration text. CI invokes Authelia's own configuration validator and starts the isolated service to probe its health endpoint. These checks do not validate a live authentication flow, reverse-proxy integration, forwarded-header trust, or production readiness. See the example README for the remaining runtime checks.
 
 ## Prerequisites
 
