@@ -48,7 +48,7 @@ python -m unittest -v test_proxy_smoke.py
 docker compose down --volumes --remove-orphans
 ```
 
-The fixture publishes only Caddy on `127.0.0.1:18080`. Its Compose network is internal; Authelia and both upstreams have no published host ports. Always run it in an isolated local environment. The smoke tests currently exercise denial and routing only; they do not establish a valid session or prove successful authenticated access.
+The fixture publishes Caddy's HTTP test listener on `127.0.0.1:18080` and HTTPS test listener on `127.0.0.1:18443`. Authelia and both upstreams have no published host ports and remain on a dedicated internal Compose network; Caddy joins a separate host-access bridge. Protected-route checks use HTTPS, as required for Authelia session-cookie authorization. Always run it in an isolated local environment. The smoke tests currently exercise denial and routing only; they do not establish a valid session or prove successful authenticated access.
 
 ## Safety and operational limits
 
