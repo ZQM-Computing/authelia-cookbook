@@ -5,6 +5,7 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
     ports:
       - "127.0.0.1:18080:8080"
+      - "127.0.0.1:18443:8443"
     depends_on:
       - authelia
       - public-app
@@ -18,7 +19,7 @@ services:
     image: authelia/authelia:4.39.28
     command: ["authelia", "--config", "/config/configuration.yml"]
     volumes:
-      - ../01-isolated-access-control/configuration.yml:/config/configuration.yml:ro
+      - ./authelia-configuration.yml:/config/configuration.yml:ro
       - ../01-isolated-access-control/users_database.yml:/config/users_database.yml:ro
     networks:
       - proxy-test
