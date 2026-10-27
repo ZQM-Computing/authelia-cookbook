@@ -16,6 +16,7 @@ From this directory:
 
 ```sh
 docker compose config
+docker run --rm --volume "$PWD:/config:ro" authelia/authelia:4.39.28 authelia config validate --config /config/configuration.yml
 ```
 
 Review the rendered configuration before starting. The user password is an
@@ -39,9 +40,9 @@ not a backup strategy.
   listed as a public demonstration route.
 - `protected.example.test`: requires one-factor authentication.
 - A typo or unsupported policy: configuration validation/startup should fail;
-  verify this against the exact image version before relying on it operationally.
+  verify this against the pinned image before relying on it operationally.
 
-The domain rules demonstrate Authelia policy configuration only. They do not
+The CI workflow runs Authelia's own configuration validator against the pinned image. This validates configuration structure, not integrations or actual authorization behavior. The domain rules demonstrate policy configuration only. They do not
 prove that a reverse proxy forwards identity headers safely or that a deployed
 service is protected. For a real integration, test proxy routing, header
 stripping, TLS, cookie scope, MFA, account recovery, and direct-origin access.
