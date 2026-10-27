@@ -95,7 +95,7 @@ class AccessControlContractTests(unittest.TestCase):
     def test_proxy_plan_requires_positive_authenticated_access(self):
         self.assertRegex(PROXY_PLAN, r"(?i)valid session.{0,120}protected route")
         self.assertIn("positive assertion", PROXY_PLAN.lower())
-        self.assertIn("must be mandatory", PROXY_PLAN.lower())
+        self.assertIn("positive assertion is mandatory", PROXY_PLAN.lower())
 
     def test_proxy_plan_makes_unknown_host_behavior_deterministic(self):
         self.assertIn("deterministic", PROXY_PLAN.lower())
