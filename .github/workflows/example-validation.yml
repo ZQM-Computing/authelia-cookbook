@@ -95,6 +95,14 @@ jobs:
           --volume "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro"
           caddy:2.10.2
           caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+      - name: Validate fixture Authelia configuration
+        working-directory: examples/02-proxy-integration
+        run: >-
+          docker run --rm
+          --volume "$PWD/authelia-configuration.yml:/config/configuration.yml:ro"
+          --volume "$PWD/../01-isolated-access-control/users_database.yml:/config/users_database.yml:ro"
+          authelia/authelia:4.39.28
+          authelia config validate --config /config/configuration.yml
       - name: Validate proxy fixture Compose topology
         working-directory: examples/02-proxy-integration
         run: docker compose config --quiet
