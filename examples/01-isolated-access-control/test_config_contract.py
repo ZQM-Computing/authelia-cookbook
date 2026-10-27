@@ -46,7 +46,8 @@ class AccessControlContractTests(unittest.TestCase):
     def test_credentials_are_obviously_synthetic_and_incomplete(self):
         self.assertIn("REPLACE_WITH_A_REAL_AUTHELIA_GENERATED_HASH", USERS)
         self.assertIn("example.test", USERS)
-        self.assertNotIn("password:", USERS.lower())
+        self.assertIn('password: "$argon2id$replace_with_a_real_authelia_generated_hash"', USERS)
+        self.assertIn('email: "demo@example.test"', USERS)
 
 
 if __name__ == "__main__":
