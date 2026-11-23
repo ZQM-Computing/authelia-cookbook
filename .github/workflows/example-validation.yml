@@ -49,10 +49,12 @@ jobs:
           set -euo pipefail
           # The checkout lives inside the runner container and is not visible to
           # the Docker daemon, so the config is copied into a created container
-          # instead of bind-mounted.
+          # ...instead of bind-mounted. Only the whole-directory form creates a
+          # missing parent (/config); copying a single file fails with
+          # "Could not find the file /config in container".
           cid="$(docker create authelia/authelia:4.39.28 authelia config validate --config /config/configuration.yml)"
           trap 'docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
-          docker cp "$PWD/configuration.yml" "$cid:/config/configuration.yml"
+          docker cp "$PWD" "$cid:/config"
           docker start -a "$cid"
       - name: Generate an ephemeral valid demo password hash
         working-directory: examples/01-isolated-access-control
@@ -106,7 +108,7 @@ jobs:
           set -euo pipefail
           cid="$(docker create caddy:2.10.2 caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile)"
           trap 'docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
-          docker cp "$PWD/Caddyfile" "$cid:/etc/caddy/Caddyfile"
+          docker cp "$PWD" "$cid:/etc/caddy"
           docker start -a "$cid"
       - name: Validate fixture Authelia configuration
         working-directory: examples/02-proxy-integration
@@ -115,8 +117,9 @@ jobs:
           set -euo pipefail
           cid="$(docker create authelia/authelia:4.39.28 authelia config validate --config /config/configuration.yml)"
           trap 'docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+          # First copy creates /config; the second file can then be placed in it.
+          docker cp "$PWD/../01-isolated-access-control" "$cid:/config"
           docker cp "$PWD/authelia-configuration.yml" "$cid:/config/configuration.yml"
-          docker cp "$PWD/../01-isolated-access-control/users_database.yml" "$cid:/config/users_database.yml"
           docker start -a "$cid"
       - name: Validate proxy fixture Compose topology
         working-directory: examples/02-proxy-integration
