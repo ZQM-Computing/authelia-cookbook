@@ -17,6 +17,10 @@ import unittest
 
 ROOT = Path(__file__).parent
 DENIAL_STATUSES = {302, 401, 403}
+# CI publishes Caddy on alternate host ports when the defaults are already taken
+# on the shared runner host. Defaults keep local runs identical to the compose file.
+HTTP_PORT = int(os.environ.get("CADDY_HTTP_PORT", "18080"))
+HTTPS_PORT = int(os.environ.get("CADDY_HTTPS_PORT", "18443"))
 
 
 class SNIHTTPSConnection(HTTPSConnection):
@@ -33,11 +37,11 @@ class SNIHTTPSConnection(HTTPSConnection):
 
 def request(host: str, headers: dict[str, str] | None = None, *, secure: bool = False):
     if secure:
-        connection = SNIHTTPSConnection(host, 18443)
-        port = 18443
+        connection = SNIHTTPSConnection(host, HTTPS_PORT)
+        port = HTTPS_PORT
     else:
-        connection = HTTPConnection("127.0.0.1", 18080, timeout=5)
-        port = 18080
+        connection = HTTPConnection("127.0.0.1", HTTP_PORT, timeout=5)
+        port = HTTP_PORT
     try:
         connection.request("GET", "/", headers={"Host": host, **(headers or {})})
         response = connection.getresponse()
@@ -122,9 +126,9 @@ class ProxyIntegrationSmokeTests(unittest.TestCase):
             "username": "demo",
             "password": password,
             "keepMeLoggedIn": False,
-            "targetURL": "https://protected.example.test:18443/",
+            "targetURL": f"https://protected.example.test:{HTTPS_PORT}/",
         })
-        connection = SNIHTTPSConnection("auth.example.test", 18443)
+        connection = SNIHTTPSConnection("auth.example.test", HTTPS_PORT)
         try:
             connection.request(
                 "POST",
@@ -133,8 +137,8 @@ class ProxyIntegrationSmokeTests(unittest.TestCase):
                 headers={
                     "Host": "auth.example.test",
                     "Content-Type": "application/json",
-                    "Origin": "https://auth.example.test:18443",
-                    "Referer": "https://auth.example.test:18443/",
+                    "Origin": f"https://auth.example.test:{HTTPS_PORT}",
+                    "Referer": f"https://auth.example.test:{HTTPS_PORT}/",
                 },
             )
             login = connection.getresponse()
