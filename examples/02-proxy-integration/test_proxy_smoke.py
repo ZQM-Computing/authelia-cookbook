@@ -21,6 +21,9 @@ DENIAL_STATUSES = {302, 401, 403}
 # on the shared runner host. Defaults keep local runs identical to the compose file.
 HTTP_PORT = int(os.environ.get("CADDY_HTTP_PORT", "18080"))
 HTTPS_PORT = int(os.environ.get("CADDY_HTTPS_PORT", "18443"))
+# Caddy pulls and starts noticeably slower than the other fixture services on a
+# cold runner; allow enough attempts before declaring the fixture unreachable.
+READY_ATTEMPTS = int(os.environ.get("PROXY_READY_ATTEMPTS", "40"))
 
 
 class SNIHTTPSConnection(HTTPSConnection):
@@ -81,7 +84,7 @@ class ProxyIntegrationSmokeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         last_result = "no HTTP response"
-        for attempt in range(15):
+        for attempt in range(READY_ATTEMPTS):
             try:
                 status, body = request("public.example.test")
                 last_result = f"HTTP {status}: {body[:300]!r}"
@@ -94,7 +97,7 @@ class ProxyIntegrationSmokeTests(unittest.TestCase):
             raise RuntimeError(f"Caddy fixture did not return the public marker; last result: {last_result}")
 
         last_result = "no HTTPS response"
-        for attempt in range(15):
+        for attempt in range(READY_ATTEMPTS):
             try:
                 status, body = request("protected.example.test", secure=True)
                 last_result = f"HTTPS {status}: {body[:300]!r}"

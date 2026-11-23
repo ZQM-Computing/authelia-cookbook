@@ -200,6 +200,20 @@ jobs:
 
           docker compose -f ci-compose.yaml down --remove-orphans >/dev/null 2>&1 || true
           docker compose -f ci-compose.yaml up -d --no-build
+
+          # Caddy is the slowest service in this fixture on a cold runner; gate
+          # on its published port so a slow start is reported instead of surfacing
+          # as a ConnectionRefusedError from the test.
+          for _ in $(seq 1 60); do
+            (exec 3<>/dev/tcp/127.0.0.1/"${CADDY_HTTP_PORT}") 2>/dev/null && break
+            sleep 2
+          done
+          if ! (exec 3<>/dev/tcp/127.0.0.1/"${CADDY_HTTP_PORT}") 2>/dev/null; then
+            docker compose -f ci-compose.yaml ps --no-color
+            docker compose -f ci-compose.yaml logs --no-color
+            echo "Caddy never published ${CADDY_HTTP_PORT}" >&2
+            exit 1
+          fi
       - name: Test proxy routing and authorization boundary
         working-directory: examples/02-proxy-integration
         run: python -m unittest -v test_proxy_smoke.py
