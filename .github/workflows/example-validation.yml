@@ -44,11 +44,16 @@ jobs:
         run: docker compose config --quiet
       - name: Validate configuration with the pinned Authelia image
         working-directory: examples/01-isolated-access-control
-        run: >-
-          docker run --rm
-          --volume "$PWD:/config:ro"
-          authelia/authelia:4.39.28
-          authelia config validate --config /config/configuration.yml
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The checkout lives inside the runner container and is not visible to
+          # the Docker daemon, so the config is copied into a created container
+          # instead of bind-mounted.
+          cid="$(docker create authelia/authelia:4.39.28 authelia config validate --config /config/configuration.yml)"
+          trap 'docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+          docker cp "$PWD/configuration.yml" "$cid:/config/configuration.yml"
+          docker start -a "$cid"
       - name: Generate an ephemeral valid demo password hash
         working-directory: examples/01-isolated-access-control
         shell: bash
@@ -96,19 +101,23 @@ jobs:
           exit 1
       - name: Validate isolated Caddy proxy configuration
         working-directory: examples/02-proxy-integration
-        run: >-
-          docker run --rm
-          --volume "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro"
-          caddy:2.10.2
-          caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          cid="$(docker create caddy:2.10.2 caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile)"
+          trap 'docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+          docker cp "$PWD/Caddyfile" "$cid:/etc/caddy/Caddyfile"
+          docker start -a "$cid"
       - name: Validate fixture Authelia configuration
         working-directory: examples/02-proxy-integration
-        run: >-
-          docker run --rm
-          --volume "$PWD/authelia-configuration.yml:/config/configuration.yml:ro"
-          --volume "$PWD/../01-isolated-access-control/users_database.yml:/config/users_database.yml:ro"
-          authelia/authelia:4.39.28
-          authelia config validate --config /config/configuration.yml
+        shell: bash
+        run: |
+          set -euo pipefail
+          cid="$(docker create authelia/authelia:4.39.28 authelia config validate --config /config/configuration.yml)"
+          trap 'docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+          docker cp "$PWD/authelia-configuration.yml" "$cid:/config/configuration.yml"
+          docker cp "$PWD/../01-isolated-access-control/users_database.yml" "$cid:/config/users_database.yml"
+          docker start -a "$cid"
       - name: Validate proxy fixture Compose topology
         working-directory: examples/02-proxy-integration
         run: docker compose config --quiet
