@@ -178,10 +178,13 @@ jobs:
           services:
             caddy:
               image: ci-caddy
+              # Caddy must sit on a non-internal network too: a port published on a
+              # container attached ONLY to an internal network is not reachable from
+              # the runner loopback, which shows up as ConnectionRefusedError.
+              networks: [proxy-test, edge]
               ports:
                 - "127.0.0.1:${CADDY_HTTP_PORT}:8080"
                 - "127.0.0.1:${CADDY_HTTPS_PORT}:8443"
-              networks: [proxy-test]
             authelia:
               image: ci-authelia
               command: ["authelia", "--config", "/config/configuration.yml"]
@@ -196,6 +199,7 @@ jobs:
           networks:
             proxy-test:
               internal: true
+            edge: {}
           YAML
 
           docker compose -f ci-compose.yaml down --remove-orphans >/dev/null 2>&1 || true
@@ -204,13 +208,19 @@ jobs:
           # Caddy is the slowest service in this fixture on a cold runner; gate
           # on its published port so a slow start is reported instead of surfacing
           # as a ConnectionRefusedError from the test.
-          for _ in $(seq 1 60); do
+          for _ in $(seq 1 30); do
             (exec 3<>/dev/tcp/127.0.0.1/"${CADDY_HTTP_PORT}") 2>/dev/null && break
             sleep 2
           done
           if ! (exec 3<>/dev/tcp/127.0.0.1/"${CADDY_HTTP_PORT}") 2>/dev/null; then
-            docker compose -f ci-compose.yaml ps --no-color
-            docker compose -f ci-compose.yaml logs --no-color
+            echo "=== compose ps ==="
+            docker compose -f ci-compose.yaml ps
+            echo "=== rendered compose config ==="
+            docker compose -f ci-compose.yaml config
+            echo "=== published ports ==="
+            docker port 02-proxy-integration-caddy-1 || true
+            echo "=== host listeners ==="
+            (ss -ltn 2>/dev/null || netstat -ltn 2>/dev/null) | head -40
             echo "Caddy never published ${CADDY_HTTP_PORT}" >&2
             exit 1
           fi
